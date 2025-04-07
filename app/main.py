@@ -1,0 +1,93 @@
+# ai_service/app/main.py
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import numpy as np
+import redis
+import os
+from dotenv import load_dotenv
+from urllib.parse import urlparse
+
+from app.utils.model import (
+    load_user_vector,
+    load_item_vector,
+    predict_dot,
+    get_all_item_vectors,
+    summarize_reviews
+)
+
+load_dotenv()
+
+# Redis setup
+redis_url = os.getenv("REDIS_URL")
+parsed_url = urlparse(redis_url)
+
+redis_client = redis.Redis(
+    host=parsed_url.hostname,
+    port=parsed_url.port,
+    username=parsed_url.username,
+    password=parsed_url.password,
+    decode_responses=True,
+)
+app = FastAPI()
+
+# ----- Request Models -----
+class RatingRequest(BaseModel):
+    user_id: str
+    item_id: str
+
+class RecommendationsRequest(BaseModel):
+    user_id: str
+    top_k: int = 10
+
+class SummaryRequest(BaseModel):
+    user_id: str
+    item_id: str
+
+# ----- Routes -----
+@app.post("/predict_rating")
+def predict_rating(req: RatingRequest):
+    cache_key = f"rating:{req.user_id}:{req.item_id}"
+    cached = redis_client.get(cache_key)
+    if cached:
+        return {"predicted_rating": float(cached)}
+
+    user_vector = load_user_vector(req.user_id)
+    item_vector = load_item_vector(req.item_id)
+
+    if user_vector is None or item_vector is None:
+        raise HTTPException(status_code=404, detail="User or item vector not found")
+
+    rating = predict_dot(user_vector, item_vector)
+    redis_client.setex(cache_key, 3600 * 6, rating)  # Cache for 6 hours
+    return {"predicted_rating": rating}
+
+@app.post("/recommendations")
+def recommend_items(req: RecommendationsRequest):
+    cache_key = f"recs:{req.user_id}:{req.top_k}"
+    cached = redis_client.get(cache_key)
+    if cached:
+        return {"recommendations": cached.decode().split(",")}
+
+    user_vector = load_user_vector(req.user_id)
+    if user_vector is None:
+        raise HTTPException(status_code=404, detail="User vector not found")
+
+    item_vectors = get_all_item_vectors()
+    scored = [(item_id, predict_dot(user_vector, vec)) for item_id, vec in item_vectors.items()]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    top_items = [item_id for item_id, _ in scored[:req.top_k]]
+
+    redis_client.setex(cache_key, 3600 * 12, ",".join(top_items))
+    return {"recommendations": top_items}
+
+@app.post("/summarize")
+def summarize(req: SummaryRequest):
+    cache_key = f"summary:{req.user_id}:{req.item_id}"
+    cached = redis_client.get(cache_key)
+    if cached:
+        return {"summary": cached.decode()}
+
+    summary = summarize_reviews(req.user_id, req.item_id)
+    redis_client.setex(cache_key, 3600 * 24 * 7, summary)
+    return {"summary": summary}  # 7-day cache
