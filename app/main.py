@@ -21,7 +21,6 @@ load_dotenv()
 # Redis setup
 redis_url = os.getenv("REDIS_URL")
 parsed_url = urlparse(redis_url)
-
 redis_client = redis.Redis(
     host=parsed_url.hostname,
     port=parsed_url.port,
@@ -29,6 +28,7 @@ redis_client = redis.Redis(
     password=parsed_url.password,
     decode_responses=True,
 )
+
 app = FastAPI()
 
 # ----- Request Models -----
@@ -45,6 +45,15 @@ class SummaryRequest(BaseModel):
     item_id: str
 
 # ----- Routes -----
+@app.get("/health")
+def health_check():
+    try:
+        redis_client.set("healthcheck", "ok", ex=60)
+        result = redis_client.get("healthcheck")
+        return {"status": "ok", "redis": result == "ok"}
+    except Exception as e:
+        return {"status": "error", "redis_error": str(e)}
+
 @app.post("/predict_rating")
 def predict_rating(req: RatingRequest):
     cache_key = f"rating:{req.user_id}:{req.item_id}"
@@ -67,7 +76,7 @@ def recommend_items(req: RecommendationsRequest):
     cache_key = f"recs:{req.user_id}:{req.top_k}"
     cached = redis_client.get(cache_key)
     if cached:
-        return {"recommendations": cached.decode().split(",")}
+        return {"recommendations": cached.split(",")}
 
     user_vector = load_user_vector(req.user_id)
     if user_vector is None:
@@ -86,7 +95,7 @@ def summarize(req: SummaryRequest):
     cache_key = f"summary:{req.user_id}:{req.item_id}"
     cached = redis_client.get(cache_key)
     if cached:
-        return {"summary": cached.decode()}
+        return {"summary": cached}
 
     summary = summarize_reviews(req.user_id, req.item_id)
     redis_client.setex(cache_key, 3600 * 24 * 7, summary)
