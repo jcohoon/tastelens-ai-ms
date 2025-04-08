@@ -98,9 +98,12 @@ def summarize(req: SummaryRequest):
     cache_key = f"summary:{req.user_id}:{req.item_id}"
     cached = redis_client.get(cache_key)
     if cached:
-        return {"summary": cached}
+        return {"summary": cached.decode("utf-8")}
 
-    summary = summarize_reviews(req.user_id, req.item_id)
+    try:
+        summary = summarize_reviews(req.user_id, req.item_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
     redis_client.setex(cache_key, 3600 * 24 * 7, summary)
     return {"summary": summary}
 
