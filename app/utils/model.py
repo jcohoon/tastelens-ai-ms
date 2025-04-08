@@ -15,6 +15,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # ------------------------
 def train_model_from_supabase():
     import logging
+    level=logging.INFO,  # Or DEBUG if you want more
     logging.info("🔍 Pulling ratings from Supabase...")
 
     response = supabase.table("ratings").select("user_id, item_id, rating").execute()
