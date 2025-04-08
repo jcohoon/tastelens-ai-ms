@@ -66,20 +66,25 @@ def get_all_item_vectors():
         return {r["item_id"]: np.array(r["vector"]) for r in res.data}
     return {}
 
-def get_user_reviews(user_id):
-    res = supabase.table("reviews") \
-        .select("item_id, text") \
+def get_user_ratings(user_id):
+    res = supabase.table("ratings") \
+        .select("item_id, review_text, rating") \
         .eq("user_id", user_id) \
         .order("created_at", desc=True) \
         .limit(5) \
         .execute()
 
     if not res.data:
-        return "No available reviews from this user."
+        return "No available ratings from this user."
 
-    review_texts = [
-        f"- Reviewed item {r['item_id']}: {r['text']}" for r in res.data
-    ]
+    review_texts = []
+    for r in res.data:
+        rating_str = f"{r['rating']:.1f}" if r.get('rating') is not None else "No rating"
+        review_text = r.get('review_text', 'No review text')
+        review_texts.append(
+            f"- Item {r['item_id']}: rated {rating_str}/5 — \"{review_text}\""
+        )
+
     return "\n".join(review_texts)
 
 def get_item_details(item_id):
@@ -105,11 +110,11 @@ def predict_dot(user_vec, item_vec):
     return float(np.dot(user_vec, item_vec))
 
 def summarize_reviews(user_id, item_id):
-    user_reviews = get_user_reviews(user_id)
+    user_reviews = get_user_ratings(user_id)
     item_details = get_item_details(item_id)
 
     prompt = (
-        f"Based on this user's review history:\n{user_reviews}\n\n"
+        f"Based on this user's rating and review history:\n{user_reviews}\n\n"
         f"And this item's description and tags:\n{item_details}\n\n"
         "Explain why the user might like this item."
     )
