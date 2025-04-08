@@ -9,15 +9,6 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 
-from app.utils.model import (
-    load_user_vector,
-    load_item_vector,
-    predict_dot,
-    get_all_item_vectors,
-    summarize_reviews,
-    train_model_from_supabase
-)
-
 load_dotenv()
 
 # Redis setup
@@ -58,6 +49,8 @@ def health_check():
 
 @app.post("/predict_rating")
 def predict_rating(req: RatingRequest):
+    from app.utils.model import load_user_vector, load_item_vector, predict_dot
+    
     cache_key = f"rating:{req.user_id}:{req.item_id}"
     cached = redis_client.get(cache_key)
     if cached:
@@ -75,6 +68,8 @@ def predict_rating(req: RatingRequest):
 
 @app.post("/recommendations")
 def recommend_items(req: RecommendationsRequest):
+    from app.utils.model import load_user_vector, predict_dot
+
     cache_key = f"recs:{req.user_id}:{req.top_k}"
     cached = redis_client.get(cache_key)
     if cached:
