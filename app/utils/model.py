@@ -126,4 +126,6 @@ def summarize_reviews(user_id, item_id):
         temperature=0.7,
     )
 
-    return response.text.strip()
+    # Extract the actual text response
+    summary_text = response.output[0].content[0].text
+    return summary_text.strip()
