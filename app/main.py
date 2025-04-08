@@ -103,19 +103,31 @@ def summarize(req: SummaryRequest):
     return {"summary": summary}
 
 import logging
-
 logging.basicConfig(level=logging.INFO)
+
+@app.get("/startup-test")
+def startup_test():
+    return {"status": "booted"}
 
 @app.post("/train_model")
 def train_model():
     try:
-        logging.info("🔥 Starting training process...")
+        logging.info("🔥 Received /train_model call")
+
+        try:
+            from app.utils.model import train_model_from_supabase
+            logging.info("📦 Successfully imported train_model_from_supabase")
+        except Exception as import_err:
+            logging.error(f"❌ Import failed: {import_err}")
+            raise HTTPException(status_code=500, detail="Import error")
+
         train_model_from_supabase()
         logging.info("✅ Model training finished.")
         return {"status": "model updated"}
+
     except Exception as e:
         logging.error(f"❌ Training failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Training failed: {e}")
 
 
 # Supabase Endpoints
