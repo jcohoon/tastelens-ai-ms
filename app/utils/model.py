@@ -66,6 +66,38 @@ def get_all_item_vectors():
         return {r["item_id"]: np.array(r["vector"]) for r in res.data}
     return {}
 
+def get_user_reviews(user_id):
+    res = supabase.table("reviews") \
+        .select("item_id, text") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=True) \
+        .limit(5) \
+        .execute()
+
+    if not res.data:
+        return "No available reviews from this user."
+
+    review_texts = [
+        f"- Reviewed item {r['item_id']}: {r['text']}" for r in res.data
+    ]
+    return "\n".join(review_texts)
+
+def get_item_details(item_id):
+    res = supabase.table("items") \
+        .select("title, description, tags") \
+        .eq("id", item_id) \
+        .single() \
+        .execute()
+
+    if not res.data:
+        return "No information found for this item."
+
+    item = res.data
+    details = f"Title: {item.get('title', 'Unknown')}\nDescription: {item.get('description', 'No description.')}"
+    if "tags" in item and item["tags"]:
+        details += f"\nTags: {', '.join(item['tags'])}"
+    return details
+
 # ------------------------
 # Prediction & Summarization
 # ------------------------
@@ -73,8 +105,16 @@ def predict_dot(user_vec, item_vec):
     return float(np.dot(user_vec, item_vec))
 
 def summarize_reviews(user_id, item_id):
-    prompt = f"Summarize why user {user_id} would like item {item_id} based on their taste."
-    response = openai.ChatCompletion.create(
+    user_reviews = get_user_reviews(user_id)
+    item_details = get_item_details(item_id)
+
+    prompt = (
+        f"Based on this user's review history:\n{user_reviews}\n\n"
+        f"And this item's description and tags:\n{item_details}\n\n"
+        "Explain why the user might like this item."
+    )
+
+    response = openai.responses.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
