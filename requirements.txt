@@ -4,3 +4,4 @@ numpy
 redis
 python-dotenv
 openai
+supabase

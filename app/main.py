@@ -13,7 +13,8 @@ from app.utils.model import (
     load_item_vector,
     predict_dot,
     get_all_item_vectors,
-    summarize_reviews
+    summarize_reviews,
+    train_model_from_supabase
 )
 
 load_dotenv()
@@ -68,7 +69,7 @@ def predict_rating(req: RatingRequest):
         raise HTTPException(status_code=404, detail="User or item vector not found")
 
     rating = predict_dot(user_vector, item_vector)
-    redis_client.setex(cache_key, 3600 * 6, rating)  # Cache for 6 hours
+    redis_client.setex(cache_key, 3600 * 6, rating)
     return {"predicted_rating": rating}
 
 @app.post("/recommendations")
@@ -99,4 +100,38 @@ def summarize(req: SummaryRequest):
 
     summary = summarize_reviews(req.user_id, req.item_id)
     redis_client.setex(cache_key, 3600 * 24 * 7, summary)
-    return {"summary": summary}  # 7-day cache
+    return {"summary": summary}
+
+@app.post("/train_model")
+def train_model():
+    try:
+        train_model_from_supabase()
+        return {"status": "model updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Supabase Endpoints
+from app.utils.supabase_client import supabase
+
+def get_ratings():
+    response = supabase.table("ratings").select("*").execute()
+    return response.data  # List of dicts with user_id, item_id, rating
+
+def get_user_vector(user_id):
+    res = supabase.table("user_vectors").select("vector").eq("user_id", user_id).execute()
+    if res.data:
+        return res.data[0]["vector"]
+    return None
+
+def get_item_vector(item_id):
+    res = supabase.table("item_vectors").select("vector").eq("item_id", item_id).execute()
+    if res.data:
+        return res.data[0]["vector"]
+    return None
+
+def save_user_vector(user_id, vector):
+    supabase.table("user_vectors").upsert({
+        "user_id": user_id,
+        "vector": vector
+    }).execute()
