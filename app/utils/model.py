@@ -121,8 +121,9 @@ def summarize_reviews(user_id, item_id):
     )
 
     response = openai.responses.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
+        model="gpt-4o",
+        input=prompt,
         temperature=0.7,
     )
-    return response['choices'][0]['message']['content'].strip()
+
+    return response.text.strip()
