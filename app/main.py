@@ -1,4 +1,5 @@
 # ai_service/app/main.py
+print("🚀 Starting main.py")
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
