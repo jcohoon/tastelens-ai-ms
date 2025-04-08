@@ -79,8 +79,9 @@ def get_user_ratings(user_id):
 
     review_texts = []
     for r in res.data:
-        rating_str = f"{r['rating']:.1f}" if r.get('rating') is not None else "No rating"
-        review_text = r.get('review_text', 'No review text')
+        rating_val = float(r['rating']) if r.get('rating') else None
+        rating_str = f"{rating_val:.1f}" if rating_val is not None else "No rating"
+        review_text = r.get('review_text') or "No review text"
         review_texts.append(
             f"- Item {r['item_id']}: rated {rating_str}/5 — \"{review_text}\""
         )
