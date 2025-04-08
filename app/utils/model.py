@@ -14,11 +14,17 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Supabase-based Training
 # ------------------------
 def train_model_from_supabase():
+    import logging
+    logging.info("🔍 Pulling ratings from Supabase...")
+
     response = supabase.table("ratings").select("user_id, item_id, rating").execute()
     df = pd.DataFrame(response.data)
+    logging.info(f"📊 Loaded {len(df)} ratings.")
 
     if df.empty:
         raise Exception("No ratings found")
+
+    logging.info("⚙️ Training SVD model...")
 
     reader = Reader(rating_scale=(0, 5))
     data = Dataset.load_from_df(df[['user_id', 'item_id', 'rating']], reader)
@@ -33,6 +39,7 @@ def train_model_from_supabase():
         supabase.table("user_vectors").upsert({"user_id": raw_id, "vector": vector}).execute()
 
     # Upsert item_vectors
+    logging.info("✅ Upserting user and item vectors...")
     for iid in trainset.all_items():
         raw_id = trainset.to_raw_iid(iid)
         vector = algo.qi[iid].tolist()

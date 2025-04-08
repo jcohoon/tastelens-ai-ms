@@ -102,12 +102,19 @@ def summarize(req: SummaryRequest):
     redis_client.setex(cache_key, 3600 * 24 * 7, summary)
     return {"summary": summary}
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 @app.post("/train_model")
 def train_model():
     try:
+        logging.info("🔥 Starting training process...")
         train_model_from_supabase()
+        logging.info("✅ Model training finished.")
         return {"status": "model updated"}
     except Exception as e:
+        logging.error(f"❌ Training failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
