@@ -1,0 +1,9 @@
+[phases.setup]
+nixPkgs = ['python310', 'gcc', 'gfortran']
+
+[phases.build]
+commands = [
+  "pip install --upgrade pip",
+  "pip install numpy",
+  "pip install -r requirements.txt"
+]
