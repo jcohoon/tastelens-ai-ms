@@ -1,9 +1,9 @@
-fastapi==0.100.0
+fastapi
 uvicorn
 numpy
+scikit-surprise
+pandas
+openai
 redis
 python-dotenv
-openai
-pandas
 supabase
-scikit-surprise
