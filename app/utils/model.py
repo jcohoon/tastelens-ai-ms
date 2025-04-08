@@ -89,7 +89,7 @@ def get_user_ratings(user_id):
 
 def get_item_details(item_id):
     res = supabase.table("items") \
-        .select("title, description, tags") \
+        .select("title, description, metadata") \
         .eq("id", item_id) \
         .single() \
         .execute()
@@ -99,8 +99,8 @@ def get_item_details(item_id):
 
     item = res.data
     details = f"Title: {item.get('title', 'Unknown')}\nDescription: {item.get('description', 'No description.')}"
-    if "tags" in item and item["tags"]:
-        details += f"\nTags: {', '.join(item['tags'])}"
+    if "metadata" in item and item["metadata"]:
+        details += f"\nMetadata: {', '.join(item['metadata'])}"
     return details
 
 # ------------------------
@@ -115,7 +115,7 @@ def summarize_reviews(user_id, item_id):
 
     prompt = (
         f"Based on this user's rating and review history:\n{user_reviews}\n\n"
-        f"And this item's description and tags:\n{item_details}\n\n"
+        f"And this item's description and metadata:\n{item_details}\n\n"
         "Explain why the user might like this item."
     )
 
