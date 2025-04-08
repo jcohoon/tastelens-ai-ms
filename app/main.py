@@ -98,7 +98,7 @@ def summarize(req: SummaryRequest):
     cache_key = f"summary:{req.user_id}:{req.item_id}"
     cached = redis_client.get(cache_key)
     if cached:
-        return {"summary": cached.decode("utf-8")}
+        return {"summary": cached}
 
     try:
         summary = summarize_reviews(req.user_id, req.item_id)
