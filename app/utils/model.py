@@ -116,9 +116,12 @@ def summarize_reviews(user_id, item_id):
     item_details = get_item_details(item_id)
 
     prompt = (
-        f"Based on this user's rating and review history:\n{user_reviews}\n\n"
+        f"Based on my rating and review history:\n{user_reviews}\n\n"
         f"And this item's description and metadata:\n{item_details}\n\n"
-        "Explain why the user might like this item."
+        "Explain why I might like this item.\n\n"
+        "Be concise and only refer to my past reviews and ratings generally.\n\n"
+        "For example, you can say something about the titles, themes or tones that the user has liked in the past.\n"
+        
     )
 
     response = openai.responses.create(
