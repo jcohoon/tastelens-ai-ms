@@ -121,6 +121,9 @@ def summarize_reviews(user_id, item_id):
         "Explain why I might like this item.\n\n"
         "Be concise and only refer to my past reviews and ratings generally.\n\n"
         "For example, you can say something about the titles, themes or tones that the user has liked in the past.\n"
+        "If the user has rated items with similar themes or tones, mention that.\n"
+        "If the user has not provided any or very few reviews, don't mention it.\n"
+        "If the user has only provided a few ratings, you can contextualize the recommendation with that.\n"
         
     )
 
