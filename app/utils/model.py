@@ -121,9 +121,7 @@ def get_item_details(item_id):
 # Prediction & Summarization
 # ------------------------
 def predict_dot(user_vec, item_vec):
-    raw_score = float(np.dot(user_vec, item_vec))
-    # Clamp to 0-5 scale
-    return max(0.0, min(5.0, raw_score))
+    return float(np.dot(user_vec, item_vec))
 
 def summarize_reviews(user_id, item_id):
     user_reviews = get_user_ratings(user_id)
