@@ -7,6 +7,7 @@ import pandas as pd
 import json
 from surprise import Dataset, Reader, SVD
 from app.utils.supabase_client import supabase
+import logging
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -14,7 +15,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Supabase-based Training
 # ------------------------
 def train_model_from_supabase():
-    import logging
     level=logging.INFO,  # Or DEBUG if you want more
     logging.info("🔍 Pulling ratings from Supabase...")
 
