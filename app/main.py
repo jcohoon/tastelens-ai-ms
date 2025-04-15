@@ -56,17 +56,22 @@ def predict_rating(req: RatingRequest):
     from app.utils.model import load_user_vector, load_item_vector, predict_dot
 
     cache_key = f"rating:{req.user_id}:{req.item_id}"
+    logging.info(f"Checking cache for predicted rating with key: {cache_key}")
     cached = redis_client.get(cache_key)
     if cached:
+        logging.info(f"Cache hit for {cache_key}")
         return {"predicted_rating": float(cached)}
 
+    logging.info(f"Cache miss for {cache_key}. Loading user and item vectors.")
     user_vector = load_user_vector(req.user_id)
     item_vector = load_item_vector(req.item_id)
 
     if user_vector is None or item_vector is None:
+        logging.warning(f"User or item vector not found for user_id={req.user_id}, item_id={req.item_id}")
         raise HTTPException(status_code=404, detail="User or item vector not found")
 
     rating = predict_dot(user_vector, item_vector)
+    logging.info(f"Predicted rating for user_id={req.user_id}, item_id={req.item_id}: {rating}")
     redis_client.setex(cache_key, 3600 * 6, rating)
     return {"predicted_rating": rating}
 

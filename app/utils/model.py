@@ -50,24 +50,34 @@ def train_model_from_supabase():
 # Supabase-based Retrieval
 # ------------------------
 def load_user_vector(user_id):
+    logging.info(f"Loading user vector for user_id={user_id}")
     res = supabase.table("user_vectors").select("vector").eq("user_id", user_id).execute()
     if res.data:
+        logging.info(f"User vector found for user_id={user_id}")
         return np.array(res.data[0]["vector"])
+    logging.warning(f"No user vector found for user_id={user_id}")
     return None
 
 def load_item_vector(item_id):
+    logging.info(f"Loading item vector for item_id={item_id}")
     res = supabase.table("item_vectors").select("vector").eq("item_id", item_id).execute()
     if res.data:
+        logging.info(f"Item vector found for item_id={item_id}")
         return np.array(res.data[0]["vector"])
+    logging.warning(f"No item vector found for item_id={item_id}")
     return None
 
 def get_all_item_vectors():
+    logging.info("Loading all item vectors")
     res = supabase.table("item_vectors").select("item_id, vector").execute()
     if res.data:
+        logging.info(f"Loaded {len(res.data)} item vectors")
         return {r["item_id"]: np.array(r["vector"]) for r in res.data}
+    logging.warning("No item vectors found")
     return {}
 
 def get_user_ratings(user_id):
+    logging.info(f"Fetching ratings for user_id={user_id}")
     res = supabase.table("ratings") \
         .select("item_id, review_text, rating") \
         .eq("user_id", user_id) \
@@ -76,6 +86,7 @@ def get_user_ratings(user_id):
         .execute()
 
     if not res.data:
+        logging.warning(f"No ratings found for user_id={user_id}")
         return "No available ratings from this user."
 
     review_texts = []
@@ -87,6 +98,7 @@ def get_user_ratings(user_id):
             f"- Item {r['item_id']}: rated {rating_str}/5 — \"{review_text}\""
         )
 
+    logging.info(f"Fetched {len(review_texts)} ratings for user_id={user_id}")
     return "\n".join(review_texts)
 
 def get_item_details(item_id):
