@@ -79,10 +79,10 @@ def predict_rating(req: RatingRequest):
 def recommend_items(req: RecommendationsRequest):
     from app.utils.model import load_user_vector, get_all_item_vectors, predict_dot
 
-    cache_key = f"recs:{req.user_id}:{req.top_k}"
-    cached = redis_client.get(cache_key)
-    if cached:
-        return {"recommendations": cached.split(",")}
+    # cache_key = f"recs:{req.user_id}:{req.top_k}"
+    # cached = redis_client.get(cache_key)
+    # if cached:
+    #     return {"recommendations": cached.split(",")}
 
     user_vector = load_user_vector(req.user_id)
     if user_vector is None:
